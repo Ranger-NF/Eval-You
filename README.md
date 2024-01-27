@@ -13,9 +13,9 @@
 ## 🚲 Development cycle:
 
 ### Setup:
-- [ x ] Setup the repo
-- [ x ] Prepare design document
-- [ x ] Create an initial app
+- [x] Setup the repo
+- [x] Prepare design document
+- [x] Create an initial app
 
 ### Stage 1:
 - [ ] Number of days remaining:
