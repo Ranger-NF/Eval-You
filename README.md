@@ -3,7 +3,7 @@
 <br>
 <br>
 
-![The plan](study-eval-plan.png)
+![The plan](mockups/study-eval-ui.png)
 <p align="center"><samp>The plan</samp></p>
 
 ## 🏗 Dependenices:
@@ -21,6 +21,8 @@
 - [x] Number of days remaining:
     - Calculate the remaining days till the exam date (1st April for now)
     - Show X days left
+
+- [x] Create an UI mockup
 
 - [ ] Add summary 
     - User configurable progress bar (for now) [allow increments of 25]
