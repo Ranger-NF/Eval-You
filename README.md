@@ -18,7 +18,7 @@
 - [x] Create an initial app
 
 ### Stage 1:
-- [ ] Number of days remaining:
+- [x] Number of days remaining:
     - Calculate the remaining days till the exam date (1st April for now)
     - Show X days left
 
