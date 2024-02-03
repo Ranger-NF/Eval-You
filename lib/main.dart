@@ -96,35 +96,43 @@ class _MyHomePage extends State<MyHomePage> {
                       )),
                   Expanded(
                     flex: 1,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 16, left: 6),
-                      child: LineChart(LineChartData(
-                          gridData: const FlGridData(show: false),
-                          lineTouchData: LineTouchData(
-                              handleBuiltInTouches: true,
-                              touchTooltipData: LineTouchTooltipData(
-                                  tooltipBgColor:
-                                      Colors.blueGrey.withOpacity(0.8))),
-                          titlesData: const FlTitlesData(
-                              show: false,
-                              leftTitles: AxisTitles(
-                                  sideTitles: SideTitles(showTitles: true))),
-                          lineBarsData: [
-                            LineChartBarData(spots: const [
-                              FlSpot(1, 1),
-                              FlSpot(3, 1.5),
-                              FlSpot(5, 1.4),
-                              FlSpot(7, 3.4),
-                              FlSpot(10, 2),
-                              FlSpot(12, 2.2),
-                              FlSpot(13, 1.8),
-                            ], color: Theme.of(context).primaryColor)
-                          ],
-                          minX: 0,
-                          maxX: 14,
-                          minY: 0,
-                          maxY: 6)),
-                    ),
+                    child: LineChart(LineChartData(
+                      gridData: const FlGridData(
+                          show: true,
+                          horizontalInterval: 100,
+                          drawVerticalLine: false),
+                      lineTouchData: LineTouchData(
+                          handleBuiltInTouches: true,
+                          touchTooltipData: LineTouchTooltipData(
+                              tooltipBgColor: Colors.white.withOpacity(0.2))),
+                      titlesData: const FlTitlesData(
+                        bottomTitles: AxisTitles(
+                            axisNameSize: 20,
+                            drawBelowEverything: false,
+                            sideTitles:
+                                SideTitles(showTitles: true, reservedSize: 30)),
+                        rightTitles: AxisTitles(
+                            sideTitles:
+                                SideTitles(showTitles: true, reservedSize: 35)),
+                        leftTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        topTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                      ),
+                      lineBarsData: [
+                        LineChartBarData(spots: const [
+                          FlSpot(0, 17),
+                          FlSpot(1, 124),
+                          FlSpot(2, 0),
+                          FlSpot(3, 0),
+                          FlSpot(4, 150),
+                        ], color: Theme.of(context).primaryColor)
+                      ],
+                      minX: 0,
+                      maxX: 4,
+                      minY: 0,
+                      maxY: 300,
+                    )),
                   )
                 ])));
   }

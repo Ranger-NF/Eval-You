@@ -8,7 +8,7 @@
 
 ## 🏗 Dependenices:
 - Flutter (w/ Material You)
-- [Syncfusion Flutter Charts](https://pub.dev/packages/syncfusion_flutter_charts) for graph
+- [fl_chart](https://pub.dev/packages/fl_chart) for line graph
 
 ## 🚲 Development cycle:
 
@@ -25,13 +25,15 @@
 - [x] Create an UI mockup
 
 - [ ] Add summary 
-    - User configurable progress bar (for now) [allow increments of 25]
-    - User configurable habit status [Good, needs improvement, bad]
+    - [] Setup Basic shape
+    - [] User configurable habit status [Good, needs improvement, bad]
 
 
 ### Stage 2:
-- [ ] Graph support
-    - DAY-MARK line graph
+- [] Graph support
+    - [x] setup the DAY-MARK line graph
+    - [] Populate it with data
+
 
 
 
