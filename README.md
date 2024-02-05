@@ -25,14 +25,14 @@
 - [x] Create an UI mockup
 
 - [ ] Add summary 
-    - [] Setup Basic shape
-    - [] User configurable habit status [Good, needs improvement, bad]
+    - [ ] Setup Basic shape
+    - [ ] User configurable habit status [Good, needs improvement, bad]
 
 
 ### Stage 2:
-- [] Graph support
+- [ ] Graph support
     - [x] setup the DAY-MARK line graph
-    - [] Populate it with data
+    - [ ] Populate it with data
 
 
 
