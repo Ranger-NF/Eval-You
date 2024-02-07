@@ -23,17 +23,14 @@ final Map<int, String> subjects = {1: "Physics", 2: "Chemistry", 3: "Maths"};
 
 Future<Isar> openIsarInstance() async {
   final dir = await getApplicationDocumentsDirectory();
-  await Isar.open(
-    [],
-    directory: dir.path,
-  );
+  await Isar.open([DailyMarkSchema], directory: dir.path, inspector: false);
 
   return Future.value(Isar.getInstance());
 }
 
 String getTodaysDate() {
   final now = DateTime.now();
-  final formatNeeded = DateFormat('yMd');
+  final formatNeeded = DateFormat('yMMMd');
   return formatNeeded.format(now);
 }
 
@@ -93,8 +90,14 @@ class _MyHomePage extends State<MyHomePage> {
   }
 
   late List<Widget> subjectInfoWidget = [
-    Text(getTodaysDate()),
-    ElevatedButton(onPressed: addSubject, child: const Icon(Icons.playlist_add))
+    Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        Text(getTodaysDate()),
+        ElevatedButton(
+            onPressed: addSubject, child: const Icon(Icons.playlist_add))
+      ],
+    )
   ];
 
   @override
@@ -108,7 +111,7 @@ class _MyHomePage extends State<MyHomePage> {
     final todaysMarks =
         await isar.dailyMarks.filter().dateEqualTo(getTodaysDate()).findFirst();
 
-    subjectInfoWidget.removeRange(2, subjectInfoWidget.length);
+    subjectInfoWidget.removeRange(1, subjectInfoWidget.length);
 
     if (todaysMarks == null) {
       for (String subjectName in subjects.values) {
@@ -127,12 +130,14 @@ class _MyHomePage extends State<MyHomePage> {
     int currentIndex = 0;
     for (double eachMark in todaysMarks.marks) {
       Row subjectInfo = Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(subjects[currentIndex + 1]!),
           Text(eachMark.toString())
         ],
       );
+
+      currentIndex++;
 
       subjectInfoWidget.add(subjectInfo);
     }
@@ -218,10 +223,12 @@ class _MyHomePage extends State<MyHomePage> {
               )),
           Expanded(
               flex: 1,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: subjectInfoWidget,
-              )),
+              child: Padding(
+                  padding: const EdgeInsets.only(left: 40, right: 40),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: subjectInfoWidget,
+                  ))),
           Expanded(
             flex: 1,
             child: LineChart(LineChartData(
@@ -237,15 +244,19 @@ class _MyHomePage extends State<MyHomePage> {
                     drawBelowEverything: false,
                     sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
                 rightTitles: AxisTitles(
+                    axisNameSize: 16,
                     sideTitles: SideTitles(showTitles: true, reservedSize: 35)),
-                leftTitles:
-                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                topTitles:
-                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                leftTitles: AxisTitles(
+                    axisNameSize: 16,
+                    sideTitles: SideTitles(showTitles: false)),
+                topTitles: AxisTitles(
+                    axisNameSize: 16,
+                    sideTitles: SideTitles(showTitles: false)),
               ),
               borderData: FlBorderData(
-                  border: const Border(
-                      bottom: BorderSide(color: Colors.white, width: 2))),
+                  border: Border(
+                      bottom: BorderSide(
+                          color: Colors.white.withOpacity(0.7), width: 2))),
               lineBarsData: [
                 LineChartBarData(spots: const [
                   FlSpot(0, 17),
