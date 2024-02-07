@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:fl_chart/fl_chart.dart';
@@ -30,7 +31,7 @@ Future<Isar> openIsarInstance() async {
 
 String getTodaysDate() {
   final now = DateTime.now();
-  final formatNeeded = DateFormat('yMMMd');
+  final formatNeeded = DateFormat('yMMMMd');
   return formatNeeded.format(now);
 }
 
@@ -89,16 +90,7 @@ class _MyHomePage extends State<MyHomePage> {
     });
   }
 
-  late List<Widget> subjectInfoWidget = [
-    Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        Text(getTodaysDate()),
-        ElevatedButton(
-            onPressed: addSubject, child: const Icon(Icons.playlist_add))
-      ],
-    )
-  ];
+  late List<Widget> subjectInfoWidget = [];
 
   @override
   void initState() {
@@ -111,12 +103,12 @@ class _MyHomePage extends State<MyHomePage> {
     final todaysMarks =
         await isar.dailyMarks.filter().dateEqualTo(getTodaysDate()).findFirst();
 
-    subjectInfoWidget.removeRange(1, subjectInfoWidget.length);
+    subjectInfoWidget.clear();
 
     if (todaysMarks == null) {
       for (String subjectName in subjects.values) {
         Row subjectInfo = Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [Text(subjectName), const Text('-')],
         );
 
@@ -132,8 +124,14 @@ class _MyHomePage extends State<MyHomePage> {
       Row subjectInfo = Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(subjects[currentIndex + 1]!),
-          Text(eachMark.toString())
+          Text(
+            subjects[currentIndex + 1]!,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w300),
+          ),
+          Text(
+            eachMark.toString(),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w300),
+          )
         ],
       );
 
@@ -147,14 +145,102 @@ class _MyHomePage extends State<MyHomePage> {
     return;
   }
 
-  void addSubject() async {
+  void enterMark(int subjectId, double mark) async {
     final isar = await isarDb;
-    final newSub = DailyMark()
-      ..date = getTodaysDate()
-      ..marks = [75, 55, 65];
-    await isar.writeTxn(() async => {await isar.dailyMarks.put(newSub)});
+    final todaysMarks =
+        await isar.dailyMarks.filter().dateEqualTo(getTodaysDate()).findFirst();
+
+    List<double> updatingMarks = [0, 0, 0];
+
+    if (todaysMarks == null) {
+      updatingMarks[subjectId - 1] = mark;
+
+      final newMarkEntry = DailyMark()
+        ..date = getTodaysDate()
+        ..marks = updatingMarks;
+
+      await isar.writeTxn(() async {
+        await isar.dailyMarks.put(newMarkEntry);
+      });
+
+      getSubjectData();
+      return;
+    }
+
+    updatingMarks = todaysMarks.marks;
+    updatingMarks[subjectId - 1] = mark;
+
+    todaysMarks.marks = updatingMarks;
+    await isar.writeTxn(() async {
+      await isar.dailyMarks.put(todaysMarks);
+    });
+
+    getSubjectData();
+
+    return;
+  }
+
+  void addSubject(BuildContext context) async {
+    showDialog(
+        context: context,
+        builder: (context) => SimpleDialog(
+              alignment: Alignment.center,
+              backgroundColor: Theme.of(context).primaryColor,
+              title: Text(getTodaysDate()),
+              children: [
+                Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Text("Physics"),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(45, 8, 45, 20),
+                    child: TextField(
+                      textAlign: TextAlign.center,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^(\d+)?\.?\d{0,2}'))
+                      ],
+                      onSubmitted: (value) =>
+                          enterMark(1, double.tryParse(value)!),
+                    ),
+                  ),
+                  const Text("Chemistry"),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(45, 8, 45, 20),
+                    child: TextField(
+                      textAlign: TextAlign.center,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^(\d+)?\.?\d{0,2}'))
+                      ],
+                      onSubmitted: (value) =>
+                          enterMark(2, double.tryParse(value)!),
+                    ),
+                  ),
+                  const Text("Maths"),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(45, 8, 45, 20),
+                    child: TextField(
+                      textAlign: TextAlign.center,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^(\d+)?\.?\d{0,2}'))
+                      ],
+                      onSubmitted: (value) =>
+                          enterMark(3, double.tryParse(value)!),
+                    ),
+                  ),
+                ])
+              ],
+            ));
 
     setState(() {});
+
+    return;
   }
 
   @override
@@ -173,17 +259,17 @@ class _MyHomePage extends State<MyHomePage> {
                 GradientText(
                   '$_daysLeft',
                   style: const TextStyle(
-                    fontSize: 56,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 64,
+                    fontWeight: FontWeight.w600,
                   ),
-                  gradient: LinearGradient(
-                      begin: Alignment.bottomLeft,
-                      colors: [
-                        Theme.of(context).colorScheme.secondary,
-                        Theme.of(context).colorScheme.primary
-                      ]),
+                  gradient:
+                      LinearGradient(begin: Alignment.bottomLeft, colors: [
+                    Theme.of(context).colorScheme.secondary,
+                    Theme.of(context).colorScheme.primary,
+                  ]),
                 ),
-                const Text("Days Left") // FONT SIZE UPDATE NEEDED
+                const Text("Days left",
+                    style: TextStyle(fontSize: 20)) // FONT SIZE UPDATE NEEDED
               ],
             ),
           ),
@@ -196,16 +282,17 @@ class _MyHomePage extends State<MyHomePage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    const Text("Habit Status"),
+                    const Text(
+                      "Habit Status",
+                      style: TextStyle(fontSize: 20),
+                    ),
                     SimpleCircularProgressBar(
                       size: 80,
                       mergeMode: true,
-                      progressStrokeWidth: 30,
-                      backStrokeWidth: 30,
-                      progressColors: [
-                        Theme.of(context).colorScheme.secondary,
-                        Theme.of(context).primaryColor
-                      ],
+                      progressStrokeWidth: 25,
+                      backStrokeWidth: 25,
+                      backColor: Theme.of(context).colorScheme.secondary,
+                      progressColors: [Theme.of(context).primaryColor],
                       startAngle: 225,
                       valueNotifier: habitValueNotifier,
                       onGetText: (double value) {
@@ -214,7 +301,7 @@ class _MyHomePage extends State<MyHomePage> {
                           style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.tertiary),
+                              color: Theme.of(context).colorScheme.primary),
                         );
                       },
                     ),
@@ -223,12 +310,32 @@ class _MyHomePage extends State<MyHomePage> {
               )),
           Expanded(
               flex: 1,
-              child: Padding(
-                  padding: const EdgeInsets.only(left: 40, right: 40),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: subjectInfoWidget,
-                  ))),
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Text(
+                          getTodaysDate(),
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        OutlinedButton(
+                            onPressed: () => addSubject(context),
+                            child: const Icon(
+                              Icons.playlist_add,
+                              color: Colors.white,
+                            ))
+                      ],
+                    ),
+                    Padding(
+                        padding: const EdgeInsets.only(left: 40, right: 40),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: subjectInfoWidget,
+                        ))
+                  ])),
           Expanded(
             flex: 1,
             child: LineChart(LineChartData(
@@ -240,7 +347,7 @@ class _MyHomePage extends State<MyHomePage> {
                       tooltipBgColor: Colors.white.withOpacity(0.2))),
               titlesData: const FlTitlesData(
                 bottomTitles: AxisTitles(
-                    axisNameSize: 20,
+                    axisNameSize: 14,
                     drawBelowEverything: false,
                     sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
                 rightTitles: AxisTitles(
@@ -259,15 +366,11 @@ class _MyHomePage extends State<MyHomePage> {
                           color: Colors.white.withOpacity(0.7), width: 2))),
               lineBarsData: [
                 LineChartBarData(spots: const [
-                  FlSpot(0, 17),
-                  FlSpot(1, 124),
-                  FlSpot(2, 0),
-                  FlSpot(3, 0),
-                  FlSpot(4, 150),
+                  // Todo Fill with data
                 ], color: Theme.of(context).primaryColor)
               ],
               minX: 0,
-              maxX: 4,
+              maxX: 5,
               minY: 0,
               maxY: 300,
             )),
