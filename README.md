@@ -1,4 +1,4 @@
-<h1 align="center"> Study Evaluation App 🔍 </h1>
+<h1 align="center"> Eval You 🔍 </h1>
 <h3 align="center"><samp>A minimalistic app to keep track of exam preparation </samp></h3>
 <br>
 <br>
@@ -24,16 +24,23 @@
 
 - [x] Create an UI mockup
 
-- [ ] Add summary 
-    - [ ] Setup Basic shape
-    - [ ] User configurable habit status [Good, needs improvement, bad]
+- [x] Add summary 
+    - [x] Setup Basic shape
+    - ~~User configurable habit status [Good, needs improvement, bad]~~
 
 
 ### Stage 2:
-- [ ] Graph support
+- [x] Graph support
     - [x] setup the DAY-MARK line graph
-    - [ ] Populate it with data
+    - [x] Populate it with data
 
+### Stage 3: Improvement
+- [ ] Rename the app
+- [ ] Add a logo
+- [ ] Cleanup dialogue and insights
 
+### Stage 4: Open it up
+- [ ] Make it user friendly and versatile (Allow changing exam date)
+- [ ] Notification
 
 
