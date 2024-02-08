@@ -29,10 +29,32 @@ Future<Isar> openIsarInstance() async {
   return Future.value(Isar.getInstance());
 }
 
-String getTodaysDate() {
-  final now = DateTime.now();
+String getFormattedDate([DateTime? dateToFormat]) {
+  dateToFormat ??= DateTime.now();
+
   final formatNeeded = DateFormat('yMMMMd');
-  return formatNeeded.format(now);
+  return formatNeeded.format(dateToFormat);
+}
+
+String calculateChangeInPercent(double originalValue, double changedValue) {
+  double changeInValue = changedValue - originalValue;
+  double percentageChange = (changeInValue / originalValue) * 100;
+  return "${percentageChange.toStringAsFixed(2)}%";
+}
+
+Color getValueChangeChange(String valueInPercent) {
+  double? valueInNum =
+      double.tryParse(valueInPercent.replaceAll(RegExp(r'%'), ''));
+
+  if (valueInNum == null || valueInNum == 0.00) {
+    return Colors.white;
+  }
+
+  if (valueInNum > 0) {
+    return Colors.green.shade800;
+  } else {
+    return Colors.red.shade800;
+  }
 }
 
 void main() {
@@ -95,13 +117,20 @@ class _MyHomePage extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    getSubjectData();
+    updateMarkSummary();
   }
 
-  void getSubjectData() async {
+  void updateMarkSummary() async {
     final isar = await isarDb;
-    final todaysMarks =
-        await isar.dailyMarks.filter().dateEqualTo(getTodaysDate()).findFirst();
+    final todaysMarks = await isar.dailyMarks
+        .filter()
+        .dateEqualTo(getFormattedDate())
+        .findFirst();
+    final previousDayMarks = await isar.dailyMarks
+        .filter()
+        .dateEqualTo(
+            getFormattedDate(DateTime.now().subtract(const Duration(days: 1))))
+        .findFirst();
 
     subjectInfoWidget.clear();
 
@@ -119,8 +148,10 @@ class _MyHomePage extends State<MyHomePage> {
 
       return;
     }
+
     int currentIndex = 0;
-    for (double eachMark in todaysMarks.marks) {
+
+    for (double todaysSubjectMark in todaysMarks.marks) {
       Row subjectInfo = Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -128,9 +159,31 @@ class _MyHomePage extends State<MyHomePage> {
             subjects[currentIndex + 1]!,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w300),
           ),
-          Text(
-            eachMark.toString(),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w300),
+          Row(
+            children: [
+              Text('${todaysSubjectMark.toString()}  ',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w300,
+                  )),
+              previousDayMarks == null
+                  ? const Text('',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w300,
+                      ))
+                  : Text(
+                      calculateChangeInPercent(
+                          previousDayMarks.marks[currentIndex],
+                          todaysSubjectMark),
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w300,
+                          color: getValueChangeChange(calculateChangeInPercent(
+                              previousDayMarks.marks[currentIndex],
+                              todaysSubjectMark))),
+                    )
+            ],
           )
         ],
       );
@@ -145,10 +198,12 @@ class _MyHomePage extends State<MyHomePage> {
     return;
   }
 
-  void enterMark(int subjectId, double mark) async {
+  void storeTodaysMark(int subjectId, double mark) async {
     final isar = await isarDb;
-    final todaysMarks =
-        await isar.dailyMarks.filter().dateEqualTo(getTodaysDate()).findFirst();
+    final todaysMarks = await isar.dailyMarks
+        .filter()
+        .dateEqualTo(getFormattedDate())
+        .findFirst();
 
     List<double> updatingMarks = [0, 0, 0];
 
@@ -156,14 +211,14 @@ class _MyHomePage extends State<MyHomePage> {
       updatingMarks[subjectId - 1] = mark;
 
       final newMarkEntry = DailyMark()
-        ..date = getTodaysDate()
+        ..date = getFormattedDate()
         ..marks = updatingMarks;
 
       await isar.writeTxn(() async {
         await isar.dailyMarks.put(newMarkEntry);
       });
 
-      getSubjectData();
+      updateMarkSummary();
       return;
     }
 
@@ -175,18 +230,18 @@ class _MyHomePage extends State<MyHomePage> {
       await isar.dailyMarks.put(todaysMarks);
     });
 
-    getSubjectData();
+    updateMarkSummary();
 
     return;
   }
 
-  void addSubject(BuildContext context) async {
+  void markEntryDialog(BuildContext context) async {
     showDialog(
         context: context,
         builder: (context) => SimpleDialog(
               alignment: Alignment.center,
               backgroundColor: Theme.of(context).primaryColor,
-              title: Text(getTodaysDate()),
+              title: Text(getFormattedDate()),
               children: [
                 Column(mainAxisSize: MainAxisSize.min, children: [
                   const Text("Physics"),
@@ -201,7 +256,7 @@ class _MyHomePage extends State<MyHomePage> {
                             RegExp(r'^(\d+)?\.?\d{0,2}'))
                       ],
                       onSubmitted: (value) =>
-                          enterMark(1, double.tryParse(value)!),
+                          storeTodaysMark(1, double.tryParse(value)!),
                     ),
                   ),
                   const Text("Chemistry"),
@@ -216,7 +271,7 @@ class _MyHomePage extends State<MyHomePage> {
                             RegExp(r'^(\d+)?\.?\d{0,2}'))
                       ],
                       onSubmitted: (value) =>
-                          enterMark(2, double.tryParse(value)!),
+                          storeTodaysMark(2, double.tryParse(value)!),
                     ),
                   ),
                   const Text("Maths"),
@@ -231,7 +286,7 @@ class _MyHomePage extends State<MyHomePage> {
                             RegExp(r'^(\d+)?\.?\d{0,2}'))
                       ],
                       onSubmitted: (value) =>
-                          enterMark(3, double.tryParse(value)!),
+                          storeTodaysMark(3, double.tryParse(value)!),
                     ),
                   ),
                 ])
@@ -317,12 +372,12 @@ class _MyHomePage extends State<MyHomePage> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Text(
-                          getTodaysDate(),
+                          getFormattedDate(),
                           style: const TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         OutlinedButton(
-                            onPressed: () => addSubject(context),
+                            onPressed: () => markEntryDialog(context),
                             child: const Icon(
                               Icons.playlist_add,
                               color: Colors.white,
