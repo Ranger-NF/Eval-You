@@ -20,7 +20,7 @@ const DailyMarkSchema = CollectionSchema(
     r'date': PropertySchema(
       id: 0,
       name: r'date',
-      type: IsarType.string,
+      type: IsarType.dateTime,
     ),
     r'marks': PropertySchema(
       id: 1,
@@ -53,7 +53,6 @@ int _dailyMarkEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
-  bytesCount += 3 + object.date.length * 3;
   bytesCount += 3 + object.marks.length * 8;
   return bytesCount;
 }
@@ -64,7 +63,7 @@ void _dailyMarkSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.date);
+  writer.writeDateTime(offsets[0], object.date);
   writer.writeDoubleList(offsets[1], object.marks);
   writer.writeDouble(offsets[2], object.totalMarks);
 }
@@ -76,7 +75,7 @@ DailyMark _dailyMarkDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = DailyMark();
-  object.date = reader.readString(offsets[0]);
+  object.date = reader.readDateTime(offsets[0]);
   object.id = id;
   object.marks = reader.readDoubleList(offsets[1]) ?? [];
   object.totalMarks = reader.readDouble(offsets[2]);
@@ -91,7 +90,7 @@ P _dailyMarkDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readString(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 1:
       return (reader.readDoubleList(offset) ?? []) as P;
     case 2:
@@ -193,54 +192,46 @@ extension DailyMarkQueryWhere
 extension DailyMarkQueryFilter
     on QueryBuilder<DailyMark, DailyMark, QFilterCondition> {
   QueryBuilder<DailyMark, DailyMark, QAfterFilterCondition> dateEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+      DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'date',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
   QueryBuilder<DailyMark, DailyMark, QAfterFilterCondition> dateGreaterThan(
-    String value, {
+    DateTime value, {
     bool include = false,
-    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
         property: r'date',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
   QueryBuilder<DailyMark, DailyMark, QAfterFilterCondition> dateLessThan(
-    String value, {
+    DateTime value, {
     bool include = false,
-    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
         property: r'date',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
   QueryBuilder<DailyMark, DailyMark, QAfterFilterCondition> dateBetween(
-    String lower,
-    String upper, {
+    DateTime lower,
+    DateTime upper, {
     bool includeLower = true,
     bool includeUpper = true,
-    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
@@ -249,75 +240,6 @@ extension DailyMarkQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DailyMark, DailyMark, QAfterFilterCondition> dateStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'date',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DailyMark, DailyMark, QAfterFilterCondition> dateEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'date',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DailyMark, DailyMark, QAfterFilterCondition> dateContains(
-      String value,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'date',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DailyMark, DailyMark, QAfterFilterCondition> dateMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'date',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<DailyMark, DailyMark, QAfterFilterCondition> dateIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'date',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<DailyMark, DailyMark, QAfterFilterCondition> dateIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'date',
-        value: '',
       ));
     });
   }
@@ -661,10 +583,9 @@ extension DailyMarkQuerySortThenBy
 
 extension DailyMarkQueryWhereDistinct
     on QueryBuilder<DailyMark, DailyMark, QDistinct> {
-  QueryBuilder<DailyMark, DailyMark, QDistinct> distinctByDate(
-      {bool caseSensitive = true}) {
+  QueryBuilder<DailyMark, DailyMark, QDistinct> distinctByDate() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'date', caseSensitive: caseSensitive);
+      return query.addDistinctBy(r'date');
     });
   }
 
@@ -689,7 +610,7 @@ extension DailyMarkQueryProperty
     });
   }
 
-  QueryBuilder<DailyMark, String, QQueryOperations> dateProperty() {
+  QueryBuilder<DailyMark, DateTime, QQueryOperations> dateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'date');
     });

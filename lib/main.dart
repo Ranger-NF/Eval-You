@@ -11,10 +11,12 @@ import 'package:intl/intl.dart';
 
 part 'main.g.dart';
 
+final saveDateFormat = DateFormat('yMMMMd');
+
 @collection
 class DailyMark {
   Id id = Isar.autoIncrement;
-  late String date;
+  late DateTime date;
   late List<double>
       marks; // For the time being the subjects will be looked up using index in list
   late double totalMarks = 0;
@@ -24,7 +26,7 @@ final Map<int, String> subjects = {1: "Physics", 2: "Chemistry", 3: "Maths"};
 
 Future<Isar> openIsarInstance() async {
   final dir = await getApplicationDocumentsDirectory();
-  await Isar.open([DailyMarkSchema], directory: dir.path, inspector: false);
+  await Isar.open([DailyMarkSchema], directory: dir.path, inspector: true);
 
   return Future.value(Isar.getInstance());
 }
@@ -32,8 +34,12 @@ Future<Isar> openIsarInstance() async {
 String getFormattedDate([DateTime? dateToFormat]) {
   dateToFormat ??= DateTime.now();
 
-  final formatNeeded = DateFormat('yMMMMd');
-  return formatNeeded.format(dateToFormat);
+  return saveDateFormat.format(dateToFormat);
+}
+
+DateTime parseFormattedDate(String formattedDate) {
+  // Add error catching
+  return saveDateFormat.parse(formattedDate);
 }
 
 String calculateChangeInPercent(double originalValue, double changedValue) {
@@ -100,16 +106,57 @@ class _MyHomePage extends State<MyHomePage> {
 
   Future<Isar> isarDb = openIsarInstance();
 
-  final TextStyle increasedValueStyle =
-      const TextStyle(color: Color.fromARGB(255, 3, 114, 7));
+  List<FlSpot> graphPoints = [];
 
   void calculateDaysLeft() {
     setState(() {
       final examDay = DateTime(2024, 4, 1);
       final currentDate = DateTime.now();
       _daysLeft = examDay.difference(currentDate).inDays;
-      habitValueNotifier.value = _daysLeft.toDouble();
     });
+  }
+
+  void getGraphPoints() async {
+    const int numOfDaysTosummarize = 5;
+    // Get data of last 5 days
+    final isar = await isarDb;
+    final markEntries = await isar.dailyMarks
+        .filter()
+        .dateLessThan(DateTime.now(), include: true)
+        .and()
+        .dateGreaterThan(
+            DateTime.now().subtract(const Duration(days: numOfDaysTosummarize)),
+            include: true)
+        .findAll();
+    // Set date as 'x' and mark as 'y'
+    graphPoints.clear();
+
+    double index = 0;
+    late DateTime firstDate;
+    int numberOfDaysMissed = 0;
+
+    for (DailyMark eachDayEntry in markEntries) {
+      if (index == 0) {
+        firstDate = eachDayEntry.date;
+        index++;
+      } else {
+        while (eachDayEntry.date.difference(firstDate).inDays > index) {
+          numberOfDaysMissed++;
+          index++;
+        }
+      }
+      FlSpot singlePoint = FlSpot(index,
+          eachDayEntry.marks.reduce((value, element) => value + element));
+      graphPoints.add(singlePoint);
+      index++;
+    }
+
+    habitValueNotifier.value =
+        ((numOfDaysTosummarize - numberOfDaysMissed) / numOfDaysTosummarize) *
+            100;
+
+    setState(() {});
+    return;
   }
 
   late List<Widget> subjectInfoWidget = [];
@@ -124,12 +171,12 @@ class _MyHomePage extends State<MyHomePage> {
     final isar = await isarDb;
     final todaysMarks = await isar.dailyMarks
         .filter()
-        .dateEqualTo(getFormattedDate())
+        .dateEqualTo(parseFormattedDate(getFormattedDate()))
         .findFirst();
     final previousDayMarks = await isar.dailyMarks
         .filter()
-        .dateEqualTo(
-            getFormattedDate(DateTime.now().subtract(const Duration(days: 1))))
+        .dateEqualTo(parseFormattedDate(
+            getFormattedDate(DateTime.now().subtract(const Duration(days: 1)))))
         .findFirst();
 
     subjectInfoWidget.clear();
@@ -143,6 +190,7 @@ class _MyHomePage extends State<MyHomePage> {
 
         subjectInfoWidget.add(subjectInfo);
       }
+      getGraphPoints();
 
       setState(() {});
 
@@ -192,6 +240,7 @@ class _MyHomePage extends State<MyHomePage> {
 
       subjectInfoWidget.add(subjectInfo);
     }
+    getGraphPoints();
 
     setState(() {});
 
@@ -202,7 +251,7 @@ class _MyHomePage extends State<MyHomePage> {
     final isar = await isarDb;
     final todaysMarks = await isar.dailyMarks
         .filter()
-        .dateEqualTo(getFormattedDate())
+        .dateEqualTo(parseFormattedDate(getFormattedDate()))
         .findFirst();
 
     List<double> updatingMarks = [0, 0, 0];
@@ -211,7 +260,7 @@ class _MyHomePage extends State<MyHomePage> {
       updatingMarks[subjectId - 1] = mark;
 
       final newMarkEntry = DailyMark()
-        ..date = getFormattedDate()
+        ..date = parseFormattedDate(getFormattedDate())
         ..marks = updatingMarks;
 
       await isar.writeTxn(() async {
@@ -420,12 +469,9 @@ class _MyHomePage extends State<MyHomePage> {
                       bottom: BorderSide(
                           color: Colors.white.withOpacity(0.7), width: 2))),
               lineBarsData: [
-                LineChartBarData(spots: const [
-                  // Todo Fill with data
-                ], color: Theme.of(context).primaryColor)
+                LineChartBarData(
+                    spots: graphPoints, color: Theme.of(context).primaryColor)
               ],
-              minX: 0,
-              maxX: 5,
               minY: 0,
               maxY: 300,
             )),
